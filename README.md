@@ -1,6 +1,6 @@
 # outliving-deref
 
-Traits for types when dereferenced may outlive their values.
+Traits for types which when dereferenced may outlive their values.
 
 ## Examples
 
