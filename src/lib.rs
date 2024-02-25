@@ -3,7 +3,7 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]
 
-//! Traits for types which when dereferenced may outlive their values.
+//! Traits for types whose values when dereferenced may outlive themselves.
 //!
 //! # Crate features
 //!
@@ -88,7 +88,7 @@ mod internal {
 
 use internal::Ref;
 
-/// Types which when dereferenced may outlive their values.
+/// Types whose values when dereferenced may outlive themselves.
 pub trait OutlivingDeref {
     /// The resulting type after dereferencing.
     type Target: ?Sized;

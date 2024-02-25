@@ -1,9 +1,9 @@
 [package]
 name = "outliving-deref"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["Scallop Ye <yescallop@gmail.com>"]
 edition = "2021"
-description = "Traits for types which when dereferenced may outlive their values"
+description = "Traits for types whose values when dereferenced may outlive themselves"
 documentation = "https://docs.rs/outliving-deref"
 repository = "https://github.com/yescallop/outliving-deref"
 license = "MIT"
