@@ -2,6 +2,8 @@
 
 Traits for types whose values when dereferenced may outlive themselves.
 
+Credit goes to [@beepster4096](https://github.com/beepster4096) for figuring out a safe version of the code.
+
 ## Examples
 
 Consider the following code:
