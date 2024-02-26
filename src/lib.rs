@@ -114,7 +114,7 @@ impl<T: ?Sized, O: OutlivingDeref<Target = T>> OutDeref<T> for O {}
 /// This trait is automatically implemented for all types that implement [`OutlivingDeref`].
 pub trait OutDerefExt<'i, 'o, T: ?Sized>: OutlivingDeref<Target = T> {
     /// Dereferences the value.
-    fn outliving_deref(&'i self) -> &'o Self::Target;
+    fn outliving_deref(&'i self) -> &'o T;
 }
 
 impl<'i, 'o, T: ?Sized, O: OutlivingDeref<Target = T> + 'i> OutDerefExt<'i, 'o, T> for O
@@ -122,7 +122,7 @@ where
     O::Ref<'i>: 'o,
 {
     #[inline]
-    fn outliving_deref(&'i self) -> &'o O::Target {
+    fn outliving_deref(&'i self) -> &'o T {
         (self.outliving_deref_assoc() as O::Ref<'i>).cast()
     }
 }
@@ -138,7 +138,7 @@ impl<'a, T: ?Sized> OutlivingDeref for &'a T {
 }
 
 macro_rules! impl_outliving_deref {
-    ($($(#[$attr:meta])? $(@[$($params:tt)*])? $ty:ty => $target:ty $(where [$($bounds:tt)*])?),*) => {
+    ($($(#[$attr:meta])? $(@[$($params:tt)*])? $ty:ty => $target:ty $(where [$($bounds:tt)*])?)*) => {
         $(
             $(#[$attr])?
             impl $(<$($params)*>)? OutlivingDeref for $ty $(where $($bounds)*)? {
@@ -155,33 +155,17 @@ macro_rules! impl_outliving_deref {
 }
 
 impl_outliving_deref! {
-    alloc::ffi::CString => core::ffi::CStr,
+    alloc::ffi::CString => core::ffi::CStr
     #[cfg(feature = "std")]
-    std::ffi::OsString => std::ffi::OsStr,
+    std::ffi::OsString => std::ffi::OsStr
     #[cfg(feature = "std")]
-    std::path::PathBuf => std::path::Path,
-    alloc::string::String => str,
-    #[cfg(feature = "std")]
-    std::io::IoSlice<'_> => [u8],
-    #[cfg(feature = "std")]
-    std::io::IoSliceMut<'_> => [u8],
+    std::path::PathBuf => std::path::Path
+    alloc::string::String => str
     @[B: ?Sized + alloc::borrow::ToOwned] alloc::borrow::Cow<'_, B> => B
-        where [B::Owned: core::borrow::Borrow<B>],
-    @[P: core::ops::Deref] core::pin::Pin<P> => P::Target,
-    @[T: ?Sized] &mut T => T,
-    @[T: ?Sized] core::cell::Ref<'_, T> => T,
-    @[T: ?Sized] core::cell::RefMut<'_, T> => T,
-    @[T: ?Sized] core::mem::ManuallyDrop<T> => T,
-    @[T] core::panic::AssertUnwindSafe<T> => T,
-    @[T: ?Sized] alloc::boxed::Box<T> => T,
-    @[T: Ord] alloc::collections::binary_heap::PeekMut<'_, T> => T,
-    @[T: ?Sized] alloc::rc::Rc<T> => T,
-    @[T: ?Sized] alloc::sync::Arc<T> => T,
-    @[T] alloc::vec::Vec<T> => [T],
-    #[cfg(feature = "std")]
-    @[T: ?Sized] std::sync::MutexGuard<'_, T> => T,
-    #[cfg(feature = "std")]
-    @[T: ?Sized] std::sync::RwLockReadGuard<'_, T> => T,
-    #[cfg(feature = "std")]
-    @[T: ?Sized] std::sync::RwLockWriteGuard<'_, T> => T
+        where [B::Owned: core::borrow::Borrow<B>]
+    @[T: ?Sized] &mut T => T
+    @[T: ?Sized] alloc::boxed::Box<T> => T
+    @[T: ?Sized] alloc::rc::Rc<T> => T
+    @[T: ?Sized] alloc::sync::Arc<T> => T
+    @[T] alloc::vec::Vec<T> => [T]
 }
