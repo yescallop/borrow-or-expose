@@ -138,7 +138,7 @@ impl<'a, T: ?Sized> OutlivingDeref for &'a T {
 }
 
 macro_rules! impl_outliving_deref {
-    ($($(#[$attr:meta])? $(@[$($params:tt)*])? $ty:ty => $target:ty $(where [$($bounds:tt)*])?)*) => {
+    ($($(#[$attr:meta])? $({$($params:tt)*})? $ty:ty => $target:ty $(where {$($bounds:tt)*})?)*) => {
         $(
             $(#[$attr])?
             impl $(<$($params)*>)? OutlivingDeref for $ty $(where $($bounds)*)? {
@@ -161,11 +161,11 @@ impl_outliving_deref! {
     #[cfg(feature = "std")]
     std::path::PathBuf => std::path::Path
     alloc::string::String => str
-    @[B: ?Sized + alloc::borrow::ToOwned] alloc::borrow::Cow<'_, B> => B
-        where [B::Owned: core::borrow::Borrow<B>]
-    @[T: ?Sized] &mut T => T
-    @[T: ?Sized] alloc::boxed::Box<T> => T
-    @[T: ?Sized] alloc::rc::Rc<T> => T
-    @[T: ?Sized] alloc::sync::Arc<T> => T
-    @[T] alloc::vec::Vec<T> => [T]
+    {B: ?Sized + alloc::borrow::ToOwned} alloc::borrow::Cow<'_, B> => B
+        where {B::Owned: core::borrow::Borrow<B>}
+    {T: ?Sized} &mut T => T
+    {T: ?Sized} alloc::boxed::Box<T> => T
+    {T: ?Sized} alloc::rc::Rc<T> => T
+    {T: ?Sized} alloc::sync::Arc<T> => T
+    {T} alloc::vec::Vec<T> => [T]
 }
