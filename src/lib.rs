@@ -16,27 +16,27 @@
 //! ```
 //! use std::fmt;
 //!
-//! struct Uri<T>(T);
+//! struct Text<T>(T);
 //!
-//! impl<'a> Uri<&'a str> {
+//! impl<'a> Text<&'a str> {
 //!     fn as_str(&self) -> &'a str {
 //!         self.0
 //!     }
 //! }
 //!
-//! impl Uri<String> {
+//! impl Text<String> {
 //!     fn as_str(&self) -> &str {
 //!         &self.0
 //!     }
 //! }
 //!
-//! impl fmt::Display for Uri<&str> {
+//! impl fmt::Display for Text<&str> {
 //!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //!         f.write_str(self.as_str())
 //!     }
 //! }
 //!
-//! impl fmt::Display for Uri<String> {
+//! impl fmt::Display for Text<String> {
 //!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //!         f.write_str(self.as_str())
 //!     }
@@ -49,20 +49,23 @@
 //! use outliving_deref::{OutDeref, OutDerefExt};
 //! use std::fmt;
 //!
-//! struct Uri<T>(T);
+//! struct Text<T>(T);
 //!
-//! impl<'i, 'o, T: OutDerefExt<'i, 'o, str>> Uri<T> {
+//! impl<'i, 'o, T: OutDerefExt<'i, 'o, str>> Text<T> {
 //!     fn as_str(&'i self) -> &'o str {
 //!         self.0.outliving_deref()
 //!     }
 //! }
 //!
-//! impl<T: OutDeref<str>> fmt::Display for Uri<T> {
+//! impl<T: OutDeref<str>> fmt::Display for Text<T> {
 //!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //!         f.write_str(self.as_str())
 //!     }
 //! }
 //! ```
+//!
+//! Note that `T` is now extended to `Cow<'_, str>`, `Box<str>`, `Rc<str>`,
+//! and `Arc<str>`. Consider adding extra bounds if this is not desirable.
 
 extern crate alloc;
 #[cfg(feature = "std")]
