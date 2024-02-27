@@ -163,7 +163,6 @@ impl_outliving_deref! {
     alloc::string::String => str
     {B: ?Sized + alloc::borrow::ToOwned} alloc::borrow::Cow<'_, B> => B
         where {B::Owned: core::borrow::Borrow<B>}
-    {T: ?Sized} &mut T => T
     {T: ?Sized} alloc::boxed::Box<T> => T
     {T: ?Sized} alloc::rc::Rc<T> => T
     {T: ?Sized} alloc::sync::Arc<T> => T
