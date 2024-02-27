@@ -27,7 +27,7 @@ fn owned_as_str(t: &Text<String>) -> &str {
 }
 ```
 
-See the [documentations](https://docs.rs/outliving-deref) for detailed usage.
+See the [documentation](https://docs.rs/outliving-deref) for detailed usage.
 
 ## Credit
 
