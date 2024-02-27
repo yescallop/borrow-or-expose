@@ -8,11 +8,11 @@ Traits for types whose values when dereferenced may outlive themselves.
 TL;DR: The following code compiles:
 
 ```rust
-use outliving_deref::OutDerefExt;
+use outliving_deref::OutlivingDeref;
 
 struct Text<T>(T);
 
-impl<'i, 'o, T: OutDerefExt<'i, 'o, str>> Text<T> {
+impl<'i, 'o, T: OutlivingDeref<'i, 'o, str>> Text<T> {
     fn as_str(&'i self) -> &'o str {
         self.0.outliving_deref()
     }

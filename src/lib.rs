@@ -5,10 +5,6 @@
 
 //! Traits for types whose values when dereferenced may outlive themselves.
 //!
-//! # Crate features
-//!
-//! - `std` (default): Enables [`std`] support.
-//!
 //! # Examples
 //!
 //! Consider the following code:
@@ -46,26 +42,36 @@
 //! Using this crate, we may generalize the above code to:
 //!
 //! ```
-//! use outliving_deref::{OutDeref, OutDerefExt};
+//! use outliving_deref::{Old, OutlivingDeref};
 //! use std::fmt;
 //!
 //! struct Text<T>(T);
 //!
-//! impl<'i, 'o, T: OutDerefExt<'i, 'o, str>> Text<T> {
+//! impl<'i, 'o, T: OutlivingDeref<'i, 'o, str>> Text<T> {
 //!     fn as_str(&'i self) -> &'o str {
 //!         self.0.outliving_deref()
 //!     }
 //! }
 //!
-//! impl<T: OutDeref<str>> fmt::Display for Text<T> {
+//! impl<T: Old<str>> fmt::Display for Text<T> {
 //!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //!         f.write_str(self.as_str())
 //!     }
 //! }
 //! ```
 //!
-//! Note that `T` is now extended to `Cow<'_, str>`, `Box<str>`, `Rc<str>`,
-//! and `Arc<str>`. Consider adding extra bounds if this is not desirable.
+//! Note that [`Old<T>`] is also implemented on other types
+//! such as `T`, `&mut T`, [`Box<T>`], [`Cow<'_, T>`], [`Rc<T>`], and [`Arc<T>`].
+//! Consider adding extra trait bounds if this is not desirable.
+//!
+//! [`Box<T>`]: alloc::boxed::Box
+//! [`Cow<'_, T>`]: alloc::borrow::Cow
+//! [`Rc<T>`]: alloc::rc::Rc
+//! [`Arc<T>`]: alloc::sync::Arc
+//!
+//! # Crate features
+//!
+//! - `std` (default): Enables [`std`] support.
 
 extern crate alloc;
 #[cfg(feature = "std")]
@@ -92,12 +98,11 @@ mod internal {
 use internal::Ref;
 
 /// Types whose values when dereferenced may outlive themselves.
-pub trait OutlivingDeref {
-    /// The resulting type after dereferencing.
-    type Target: ?Sized;
-
-    /// The resulting reference type (must be `&Self::Target`), which may outlive `'i`.
-    type Ref<'i>: Ref<Self::Target>
+///
+/// See the [crate-level documentation](crate) for more details.
+pub trait Old<T: ?Sized> {
+    /// The resulting reference type (must be `&T`), which may outlive `'i`.
+    type Ref<'i>: Ref<T>
     where
         Self: 'i;
 
@@ -105,22 +110,15 @@ pub trait OutlivingDeref {
     fn outliving_deref_assoc(&self) -> Self::Ref<'_>;
 }
 
-/// Short for <code>[OutlivingDeref]<Target = T></code>.
+/// [`Old`] with lifetime parameters.
 ///
-/// This trait is automatically implemented for all types that implement [`OutlivingDeref`].
-pub trait OutDeref<T: ?Sized>: OutlivingDeref<Target = T> {}
-
-impl<T: ?Sized, O: OutlivingDeref<Target = T>> OutDeref<T> for O {}
-
-/// [`OutDeref`] with lifetime parameters.
-///
-/// This trait is automatically implemented for all types that implement [`OutlivingDeref`].
-pub trait OutDerefExt<'i, 'o, T: ?Sized>: OutlivingDeref<Target = T> {
+/// See the [crate-level documentation](crate) for more details.
+pub trait OutlivingDeref<'i, 'o, T: ?Sized>: Old<T> {
     /// Dereferences the value.
     fn outliving_deref(&'i self) -> &'o T;
 }
 
-impl<'i, 'o, T: ?Sized, O: OutlivingDeref<Target = T> + 'i> OutDerefExt<'i, 'o, T> for O
+impl<'i, 'o, T: ?Sized, O: Old<T> + 'i> OutlivingDeref<'i, 'o, T> for O
 where
     O::Ref<'i>: 'o,
 {
@@ -130,8 +128,7 @@ where
     }
 }
 
-impl<'a, T: ?Sized> OutlivingDeref for &'a T {
-    type Target = T;
+impl<'a, T: ?Sized> Old<T> for &'a T {
     type Ref<'i> = &'a T where Self: 'i;
 
     #[inline]
@@ -140,12 +137,11 @@ impl<'a, T: ?Sized> OutlivingDeref for &'a T {
     }
 }
 
-macro_rules! impl_outliving_deref {
+macro_rules! impl_old {
     ($($(#[$attr:meta])? $({$($params:tt)*})? $ty:ty => $target:ty $(where {$($bounds:tt)*})?)*) => {
         $(
             $(#[$attr])?
-            impl $(<$($params)*>)? OutlivingDeref for $ty $(where $($bounds)*)? {
-                type Target = $target;
+            impl $(<$($params)*>)? Old<$target> for $ty $(where $($bounds)*)? {
                 type Ref<'i> = &'i $target where Self: 'i;
 
                 #[inline]
@@ -157,17 +153,25 @@ macro_rules! impl_outliving_deref {
     };
 }
 
-impl_outliving_deref! {
+impl_old! {
+    {T: ?Sized} T => T
+    {T: ?Sized} &mut T => T
+
+    {T, const N: usize} [T; N] => [T]
+    {T} alloc::vec::Vec<T> => [T]
+
+    alloc::string::String => str
     alloc::ffi::CString => core::ffi::CStr
+
     #[cfg(feature = "std")]
     std::ffi::OsString => std::ffi::OsStr
     #[cfg(feature = "std")]
     std::path::PathBuf => std::path::Path
-    alloc::string::String => str
+
+    {T: ?Sized} alloc::boxed::Box<T> => T
     {B: ?Sized + alloc::borrow::ToOwned} alloc::borrow::Cow<'_, B> => B
         where {B::Owned: core::borrow::Borrow<B>}
-    {T: ?Sized} alloc::boxed::Box<T> => T
+
     {T: ?Sized} alloc::rc::Rc<T> => T
     {T: ?Sized} alloc::sync::Arc<T> => T
-    {T} alloc::vec::Vec<T> => [T]
 }
