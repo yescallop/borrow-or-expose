@@ -1,6 +1,6 @@
 [package]
 name = "outliving-deref"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Scallop Ye <yescallop@gmail.com>"]
 edition = "2021"
 description = "Traits for types whose values when dereferenced may outlive themselves"
