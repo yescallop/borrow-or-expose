@@ -5,10 +5,12 @@ Traits for types whose values when dereferenced may outlive themselves.
 [![crates.io](https://img.shields.io/crates/v/outliving-deref.svg)](https://crates.io/crates/outliving-deref)
 [![license](https://img.shields.io/github/license/yescallop/outliving-deref?color=blue)](/LICENSE)
 
-TL;DR: The following code compiles:
+See the [documentation](https://docs.rs/outliving-deref) for a walkthrough of the crate.
+
+## TL;DR - The following code compiles
 
 ```rust
-use outliving_deref::OutlivingDeref;
+use outliving_deref::{Old, OutlivingDeref};
 
 struct Text<T>(T);
 
@@ -25,9 +27,11 @@ fn borrowed_as_str(t: Text<&str>) -> &str {
 fn owned_as_str(t: &Text<String>) -> &str {
     t.as_str()
 }
-```
 
-See the [documentation](https://docs.rs/outliving-deref) for detailed usage.
+fn whatever_as_str(t: &Text<impl Old<str>>) -> &str {
+    t.as_str()
+}
+```
 
 ## Credit
 

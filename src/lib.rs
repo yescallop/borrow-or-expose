@@ -5,41 +5,46 @@
 
 //! Traits for types whose values when dereferenced may outlive themselves.
 //!
-//! # Examples
+//! # Walkthrough
 //!
-//! Consider the following code:
+//! Suppose that you have a struct `Text<T>` where `T` may be `&str` or `String`.
+//! You want to implement a generic method `as_str` on `Text` which returns
+//! a longest-living reference to the inner string.
+//! This is when [`OutlivingDeref`] comes in handy:
 //!
 //! ```
-//! use std::fmt;
+//! use outliving_deref::OutlivingDeref;
 //!
 //! struct Text<T>(T);
 //!
-//! impl<'a> Text<&'a str> {
-//!     fn as_str(&self) -> &'a str {
-//!         self.0
+//! impl<'i, 'o, T: OutlivingDeref<'i, 'o, str>> Text<T> {
+//!     fn as_str(&'i self) -> &'o str {
+//!         self.0.outliving_deref()
 //!     }
 //! }
 //!
-//! impl Text<String> {
-//!     fn as_str(&self) -> &str {
-//!         &self.0
-//!     }
+//! // The returned reference lives longer than `t`.
+//! fn borrowed_as_str(t: Text<&str>) -> &str {
+//!     t.as_str()
 //! }
 //!
-//! impl fmt::Display for Text<&str> {
-//!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//!         f.write_str(self.as_str())
-//!     }
-//! }
-//!
-//! impl fmt::Display for Text<String> {
-//!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//!         f.write_str(self.as_str())
-//!     }
+//! // The returned reference lives as long as `t`.
+//! fn owned_as_str(t: &Text<String>) -> &str {
+//!     t.as_str()
 //! }
 //! ```
 //!
-//! Using this crate, we may generalize the above code to:
+//! The [`OutlivingDeref`] trait takes two lifetime parameters `'i`, `'o`,
+//! and a type parameter `T`. Its [`outliving_deref`] method
+//! takes `&'i self` and returns `&'o T`. You may use the trait to implement
+//! your own "outliving-behaved" functions, like the `as_str` in the above example.
+//!
+//! The lifetime parameters on [`OutlivingDeref`] can be quite restrictive when
+//! outliving behavior is not needed, such as in a [`fmt::Display`] implementation.
+//! In such cases, [`Old`] should be used instead:
+//!
+//! [`outliving_deref`]: OutlivingDeref::outliving_deref
+//! [`fmt::Display`]: core::fmt::Display
 //!
 //! ```
 //! use outliving_deref::{Old, OutlivingDeref};
@@ -60,14 +65,36 @@
 //! }
 //! ```
 //!
+//! In the above example, the `as_str` method is also available on `Text<T>`
+//! where `T: Old<str>`, because [`OutlivingDeref`] is implemented on
+//! all types that implement [`Old`]. It also works the other way round
+//! because [`Old`] is a supertrait of [`OutlivingDeref`].
+//!
 //! Note that [`Old<T>`] is also implemented on other types
 //! such as `T`, `&mut T`, [`Box<T>`], [`Cow<'_, T>`], [`Rc<T>`], and [`Arc<T>`].
-//! Consider adding extra trait bounds if this is not desirable.
+//! Consider adding extra trait bounds, preferably on a function that
+//! constructs your type, if this is not desirable.
 //!
 //! [`Box<T>`]: alloc::boxed::Box
 //! [`Cow<'_, T>`]: alloc::borrow::Cow
 //! [`Rc<T>`]: alloc::rc::Rc
 //! [`Arc<T>`]: alloc::sync::Arc
+//!
+//! You may also implement [`Old`] on your own type, for example:
+//!
+//! ```
+//! use outliving_deref::Old;
+//!
+//! struct Text<'a>(&'a str);
+//!
+//! impl<'a> Old<str> for Text<'a> {
+//!     type Ref<'i> = &'a str where Self: 'i;
+//!     
+//!     fn outliving_deref_assoc(&self) -> Self::Ref<'_> {
+//!         self.0
+//!     }
+//! }
+//! ```
 //!
 //! # Crate features
 //!
@@ -77,31 +104,28 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-mod internal {
-    pub trait Ref<T: ?Sized> {
-        fn cast<'a>(self) -> &'a T
-        where
-            Self: 'a;
-    }
-
-    impl<T: ?Sized> Ref<T> for &T {
-        #[inline]
-        fn cast<'a>(self) -> &'a T
-        where
-            Self: 'a,
-        {
-            self
-        }
-    }
+trait Ref<T: ?Sized> {
+    fn cast<'a>(self) -> &'a T
+    where
+        Self: 'a;
 }
 
-use internal::Ref;
+impl<T: ?Sized> Ref<T> for &T {
+    #[inline]
+    fn cast<'a>(self) -> &'a T
+    where
+        Self: 'a,
+    {
+        self
+    }
+}
 
 /// Types whose values when dereferenced may outlive themselves.
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait Old<T: ?Sized> {
     /// The resulting reference type (must be `&T`), which may outlive `'i`.
+    #[allow(private_bounds)]
     type Ref<'i>: Ref<T>
     where
         Self: 'i;
@@ -110,7 +134,7 @@ pub trait Old<T: ?Sized> {
     fn outliving_deref_assoc(&self) -> Self::Ref<'_>;
 }
 
-/// [`Old`] with lifetime parameters.
+/// [`Old`] with extra lifetime parameters.
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait OutlivingDeref<'i, 'o, T: ?Sized>: Old<T> {
@@ -118,8 +142,9 @@ pub trait OutlivingDeref<'i, 'o, T: ?Sized>: Old<T> {
     fn outliving_deref(&'i self) -> &'o T;
 }
 
-impl<'i, 'o, T: ?Sized, O: Old<T> + 'i> OutlivingDeref<'i, 'o, T> for O
+impl<'i, 'o, T: ?Sized, O> OutlivingDeref<'i, 'o, T> for O
 where
+    O: Old<T> + ?Sized + 'i,
     O::Ref<'i>: 'o,
 {
     #[inline]
