@@ -108,7 +108,7 @@
 //! - Despite being safe to implement, [`Boe`] is not designed to be eagerly implemented as [`AsRef`] is.
 //!   This crate only provides implementations of [`Boe`] on types that currently implement [`Borrow`]
 //!   in the standard library. If this is too restrictive, feel free to copy the code pattern
-//!   from this crate to your own codebase.
+//!   from this crate as you wish.
 //!
 //! [`Borrow`]: core::borrow::Borrow
 //!
