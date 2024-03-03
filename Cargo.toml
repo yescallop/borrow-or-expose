@@ -6,7 +6,7 @@ edition = "2021"
 description = "Traits for either borrowing from or exposing a reference from a value"
 documentation = "https://docs.rs/borrow-or-expose"
 repository = "https://github.com/yescallop/borrow-or-expose"
-license = "MIT"
+license = "CC0-1.0"
 categories = ["rust-patterns"]
 
 [features]

@@ -36,7 +36,7 @@
 //!
 //! The [`BorrowOrExpose`] trait takes two lifetime parameters `'i`, `'o`,
 //! and a type parameter `T`. Its [`borrow_or_expose`] method takes `&'i self`
-//! and returns `&'o T`. You may use the trait to implement your own "borrowing or
+//! and returns `&'o T`. You can use the trait to write your own "borrowing or
 //! reference-exposing" functions, like the `as_str` method in the above example.
 //!
 //! The lifetime parameters on [`BorrowOrExpose`] can be quite restrictive when
@@ -80,7 +80,7 @@
 //! [`Rc<T>`]: alloc::rc::Rc
 //! [`Arc<T>`]: alloc::sync::Arc
 //!
-//! You may also implement [`Boe`] on your own type, for example:
+//! You can also implement [`Boe`] on your own type, for example:
 //!
 //! ```
 //! use borrow_or_expose::Boe;
@@ -95,6 +95,22 @@
 //!     }
 //! }
 //! ```
+//!
+//! # Relation between [`Boe`], [`Borrow`] and [`AsRef`]
+//!
+//! [`Boe`] has the same signature as [`Borrow`] and [`AsRef`], but [`Boe`] is different in a few aspects:
+//!
+//! - The implementation of [`Boe`] for `&T` exposes the reference with lifetime unchanged
+//!   instead of borrowing from it.
+//! - [`Boe`] does not have extra requirements on [`Eq`], [`Ord`] and [`Hash`](core::hash::Hash)
+//!   implementations as [`Borrow`] does. For this reason, you generally should not rely solely
+//!   on [`Boe`] to implement [`Borrow`].
+//! - Despite being safe to implement, [`Boe`] is not designed to be eagerly implemented as [`AsRef`] is.
+//!   This crate only provides implementations of [`Boe`] on types that currently implement [`Borrow`]
+//!   in the standard library. If this is too restrictive, feel free to copy the code pattern
+//!   from this crate to your own codebase.
+//!
+//! [`Borrow`]: core::borrow::Borrow
 //!
 //! # Crate features
 //!
@@ -139,7 +155,7 @@ pub trait Boe<T: ?Sized> {
     fn borrow_or_expose_gat(&self) -> Self::Ref<'_>;
 }
 
-/// A helper trait for implementing "borrowing or reference-exposing" functions.
+/// A helper trait for writing "borrowing or reference-exposing" functions.
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait BorrowOrExpose<'i, 'o, T: ?Sized>: Boe<T> {
