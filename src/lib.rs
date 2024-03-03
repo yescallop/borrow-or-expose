@@ -125,7 +125,7 @@ mod internal {
 
 use internal::Ref;
 
-/// Types from whose values a reference may be borrowed or exposed.
+/// Types from whose values references may be borrowed or exposed.
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait Boe<T: ?Sized> {
