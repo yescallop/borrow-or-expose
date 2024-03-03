@@ -1,34 +1,32 @@
-# outliving-deref
+# borrow-or-expose
 
-Traits for types whose values when dereferenced may outlive themselves.
+Traits for either borrowing from or exposing a reference from a value.
 
-[![crates.io](https://img.shields.io/crates/v/outliving-deref.svg)](https://crates.io/crates/outliving-deref)
-[![license](https://img.shields.io/github/license/yescallop/outliving-deref?color=blue)](/LICENSE)
+[![crates.io](https://img.shields.io/crates/v/borrow-or-expose.svg)](https://crates.io/crates/borrow-or-expose)
+[![license](https://img.shields.io/github/license/yescallop/borrow-or-expose?color=blue)](/LICENSE)
 
-See the [documentation](https://docs.rs/outliving-deref) for a walkthrough of the crate.
+See the [documentation](https://docs.rs/borrow-or-expose) for a walkthrough of the crate.
 
 ## TL;DR - The following code compiles
 
 ```rust
-use outliving_deref::{Old, OutlivingDeref};
+use borrow_or_expose::BorrowOrExpose;
 
 struct Text<T>(T);
 
-impl<'i, 'o, T: OutlivingDeref<'i, 'o, str>> Text<T> {
+impl<'i, 'o, T: BorrowOrExpose<'i, 'o, str>> Text<T> {
     fn as_str(&'i self) -> &'o str {
-        self.0.outliving_deref()
+        self.0.borrow_or_expose()
     }
 }
 
-fn borrowed_as_str(t: Text<&str>) -> &str {
-    t.as_str()
-}
-
+// The returned reference, which is borrowed from `*t`, lives as long as `t`.
 fn owned_as_str(t: &Text<String>) -> &str {
     t.as_str()
 }
 
-fn whatever_as_str(t: &Text<impl Old<str>>) -> &str {
+// The returned reference, which is exposed from `t`, lives longer than `t`.
+fn borrowed_as_str(t: Text<&str>) -> &str {
     t.as_str()
 }
 ```

@@ -1,13 +1,13 @@
 [package]
-name = "outliving-deref"
-version = "0.0.3"
+name = "borrow-or-expose"
+version = "0.0.0"
 authors = ["Scallop Ye <yescallop@gmail.com>"]
 edition = "2021"
-description = "Traits for types whose values when dereferenced may outlive themselves"
-documentation = "https://docs.rs/outliving-deref"
-repository = "https://github.com/yescallop/outliving-deref"
+description = "Traits for either borrowing from or exposing a reference from a value"
+documentation = "https://docs.rs/borrow-or-expose"
+repository = "https://github.com/yescallop/borrow-or-expose"
 license = "MIT"
-keywords = ["deref"]
+keywords = ["borrow", "expose"]
 categories = ["rust-patterns"]
 
 [features]
