@@ -7,7 +7,6 @@ description = "Traits for either borrowing from or exposing a reference from a v
 documentation = "https://docs.rs/borrow-or-expose"
 repository = "https://github.com/yescallop/borrow-or-expose"
 license = "MIT"
-keywords = ["borrow", "expose"]
 categories = ["rust-patterns"]
 
 [features]

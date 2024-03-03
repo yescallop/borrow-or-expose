@@ -98,7 +98,8 @@
 //!
 //! # Crate features
 //!
-//! - `std` (default): Enables [`std`] support.
+//! - `std` (default): Enables [`Boe`] implementations
+//!   on [`OsString`](std::ffi::OsString) and [`PathBuf`](std::path::PathBuf).
 
 extern crate alloc;
 #[cfg(feature = "std")]
@@ -146,14 +147,14 @@ pub trait BorrowOrExpose<'i, 'o, T: ?Sized>: Boe<T> {
     fn borrow_or_expose(&'i self) -> &'o T;
 }
 
-impl<'i, 'o, T: ?Sized, O> BorrowOrExpose<'i, 'o, T> for O
+impl<'i, 'o, T: ?Sized, B> BorrowOrExpose<'i, 'o, T> for B
 where
-    O: Boe<T> + ?Sized + 'i,
-    O::Ref<'i>: 'o,
+    B: Boe<T> + ?Sized + 'i,
+    B::Ref<'i>: 'o,
 {
     #[inline]
     fn borrow_or_expose(&'i self) -> &'o T {
-        (self.borrow_or_expose_gat() as O::Ref<'i>).cast()
+        (self.borrow_or_expose_gat() as B::Ref<'i>).cast()
     }
 }
 
