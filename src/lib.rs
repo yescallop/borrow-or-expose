@@ -3,23 +3,23 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]
 
-//! Traits for either borrowing from or exposing a reference from a value.
+//! Traits for either borrowing from or copying a reference from within a value.
 //!
 //! # Walkthrough
 //!
-//! Suppose that you have a struct `Text<T>` where `T` may be `&str` or `String`.
+//! Suppose that you have a struct `Text<T>` where `T` may be `String` or `&str`.
 //! You want to implement a generic method `as_str` on `Text` which returns
 //! a longest-living reference to the inner string.
-//! This is when [`BorrowOrExpose`] comes in handy:
+//! This is when [`BorrowOrSteal`] comes in handy:
 //!
 //! ```
-//! use borrow_or_expose::BorrowOrExpose;
+//! use borrow_or_steal::BorrowOrSteal;
 //!
 //! struct Text<T>(T);
 //!
-//! impl<'i, 'o, T: BorrowOrExpose<'i, 'o, str>> Text<T> {
+//! impl<'i, 'o, T: BorrowOrSteal<'i, 'o, str>> Text<T> {
 //!     fn as_str(&'i self) -> &'o str {
-//!         self.0.borrow_or_expose()
+//!         self.0.borrow_or_steal()
 //!     }
 //! }
 //!
@@ -28,37 +28,37 @@
 //!     t.as_str()
 //! }
 //!
-//! // The returned reference, which is exposed from `t`, lives longer than `t`.
+//! // The returned reference, which is copied from within `t`, lives longer than `t`.
 //! fn borrowed_as_str(t: Text<&str>) -> &str {
 //!     t.as_str()
 //! }
 //! ```
 //!
-//! The [`BorrowOrExpose`] trait takes two lifetime parameters `'i`, `'o`,
-//! and a type parameter `T`. Its [`borrow_or_expose`] method takes `&'i self`
+//! The [`BorrowOrSteal`] trait takes two lifetime parameters `'i`, `'o`,
+//! and a type parameter `T`. Its [`borrow_or_steal`] method takes `&'i self`
 //! and returns `&'o T`. You can use the trait to write your own "borrowing or
-//! reference-exposing" functions, like the `as_str` method in the above example.
+//! reference-copying" functions, like the `as_str` method in the above example.
 //!
-//! The lifetime parameters on [`BorrowOrExpose`] can be quite restrictive when
-//! reference-exposing behavior is not needed, such as in a [`fmt::Display`] implementation.
-//! In such cases, [`Boe`] should be used instead:
+//! The lifetime parameters on [`BorrowOrSteal`] can be quite restrictive when
+//! reference-copying behavior is not needed, such as in a [`fmt::Display`] implementation.
+//! In such cases, [`Bos`] should be used instead:
 //!
-//! [`borrow_or_expose`]: BorrowOrExpose::borrow_or_expose
+//! [`borrow_or_steal`]: BorrowOrSteal::borrow_or_steal
 //! [`fmt::Display`]: core::fmt::Display
 //!
 //! ```
-//! use borrow_or_expose::{Boe, BorrowOrExpose};
+//! use borrow_or_steal::{Bos, BorrowOrSteal};
 //! use std::fmt;
 //!
 //! struct Text<T>(T);
 //!
-//! impl<'i, 'o, T: BorrowOrExpose<'i, 'o, str>> Text<T> {
+//! impl<'i, 'o, T: BorrowOrSteal<'i, 'o, str>> Text<T> {
 //!     fn as_str(&'i self) -> &'o str {
-//!         self.0.borrow_or_expose()
+//!         self.0.borrow_or_steal()
 //!     }
 //! }
 //!
-//! impl<T: Boe<str>> fmt::Display for Text<T> {
+//! impl<T: Bos<str>> fmt::Display for Text<T> {
 //!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //!         f.write_str(self.as_str())
 //!     }
@@ -66,11 +66,11 @@
 //! ```
 //!
 //! In the above example, the `as_str` method is also available on `Text<T>`
-//! where `T: Boe<str>`, because [`BorrowOrExpose`] is implemented on
-//! all types that implement [`Boe`]. It also works the other way round
-//! because [`Boe`] is a supertrait of [`BorrowOrExpose`].
+//! where `T: Bos<str>`, because [`BorrowOrSteal`] is implemented for
+//! all types that implement [`Bos`]. It also works the other way round
+//! because [`Bos`] is a supertrait of [`BorrowOrSteal`].
 //!
-//! Note that [`Boe<T>`] is also implemented on other types
+//! Note that [`Bos<T>`] is also implemented for other types
 //! such as `T`, `&mut T`, [`Box<T>`], [`Cow<'_, T>`], [`Rc<T>`], and [`Arc<T>`].
 //! Consider adding extra trait bounds, preferably on a function that
 //! constructs your type, if this is not desirable.
@@ -80,33 +80,33 @@
 //! [`Rc<T>`]: alloc::rc::Rc
 //! [`Arc<T>`]: alloc::sync::Arc
 //!
-//! You can also implement [`Boe`] on your own type, for example:
+//! You can also implement [`Bos`] for your own type, for example:
 //!
 //! ```
-//! use borrow_or_expose::Boe;
+//! use borrow_or_steal::Bos;
 //!
 //! struct Text<'a>(&'a str);
 //!
-//! impl<'a> Boe<str> for Text<'a> {
+//! impl<'a> Bos<str> for Text<'a> {
 //!     type Ref<'i> = &'a str where Self: 'i;
 //!     
-//!     fn borrow_or_expose_gat(&self) -> Self::Ref<'_> {
+//!     fn borrow_or_steal_gat(&self) -> Self::Ref<'_> {
 //!         self.0
 //!     }
 //! }
 //! ```
 //!
-//! # Relation between [`Boe`], [`Borrow`] and [`AsRef`]
+//! # Relation between [`Bos`], [`Borrow`] and [`AsRef`]
 //!
-//! [`Boe`] has the same signature as [`Borrow`] and [`AsRef`], but [`Boe`] is different in a few aspects:
+//! [`Bos`] has the same signature as [`Borrow`] and [`AsRef`], but [`Bos`] is different in a few aspects:
 //!
-//! - The implementation of [`Boe`] for `&T` exposes the reference with lifetime unchanged
+//! - The implementation of [`Bos`] for `&T` copies the reference with lifetime unchanged
 //!   instead of borrowing from it.
-//! - [`Boe`] does not have extra requirements on [`Eq`], [`Ord`] and [`Hash`](core::hash::Hash)
+//! - [`Bos`] does not have extra requirements on [`Eq`], [`Ord`] and [`Hash`](core::hash::Hash)
 //!   implementations as [`Borrow`] does. For this reason, you generally should not rely solely
-//!   on [`Boe`] to implement [`Borrow`].
-//! - Despite being safe to implement, [`Boe`] is not designed to be eagerly implemented as [`AsRef`] is.
-//!   This crate only provides implementations of [`Boe`] on types that currently implement [`Borrow`]
+//!   on [`Bos`] to implement [`Borrow`].
+//! - Despite being safe to implement, [`Bos`] is not meant to be eagerly implemented as [`AsRef`] is.
+//!   This crate only provides implementations of [`Bos`] for types that currently implement [`Borrow`]
 //!   in the standard library. If this is too restrictive, feel free to copy the code pattern
 //!   from this crate as you wish.
 //!
@@ -114,8 +114,8 @@
 //!
 //! # Crate features
 //!
-//! - `std` (default): Enables [`Boe`] implementations
-//!   on [`OsString`](std::ffi::OsString) and [`PathBuf`](std::path::PathBuf).
+//! - `std` (default): Enables [`Bos`] implementations
+//!   for [`OsString`](std::ffi::OsString) and [`PathBuf`](std::path::PathBuf).
 
 extern crate alloc;
 #[cfg(feature = "std")]
@@ -141,57 +141,57 @@ mod internal {
 
 use internal::Ref;
 
-/// Types from whose values references may be borrowed or exposed.
+/// A trait for borrowing data or copying references.
 ///
 /// See the [crate-level documentation](crate) for more details.
-pub trait Boe<T: ?Sized> {
+pub trait Bos<T: ?Sized> {
     /// The resulting reference type (must be `&T`), which may outlive `'i`.
     type Ref<'i>: Ref<T>
     where
         Self: 'i;
 
-    /// Borrows from or exposes a reference from the value,
+    /// Borrows from or copies a reference from within the value,
     /// returning a reference of type [`Self::Ref`].
-    fn borrow_or_expose_gat(&self) -> Self::Ref<'_>;
+    fn borrow_or_steal_gat(&self) -> Self::Ref<'_>;
 }
 
-/// A helper trait for writing "borrowing or reference-exposing" functions.
+/// A helper trait for writing "borrowing or reference-copying" functions.
 ///
 /// See the [crate-level documentation](crate) for more details.
-pub trait BorrowOrExpose<'i, 'o, T: ?Sized>: Boe<T> {
-    /// Borrows from or exposes a reference from the value.
-    fn borrow_or_expose(&'i self) -> &'o T;
+pub trait BorrowOrSteal<'i, 'o, T: ?Sized>: Bos<T> {
+    /// Borrows from or copies a reference from within the value.
+    fn borrow_or_steal(&'i self) -> &'o T;
 }
 
-impl<'i, 'o, T: ?Sized, B> BorrowOrExpose<'i, 'o, T> for B
+impl<'i, 'o, T: ?Sized, B> BorrowOrSteal<'i, 'o, T> for B
 where
-    B: Boe<T> + ?Sized + 'i,
+    B: Bos<T> + ?Sized + 'i,
     B::Ref<'i>: 'o,
 {
     #[inline]
-    fn borrow_or_expose(&'i self) -> &'o T {
-        (self.borrow_or_expose_gat() as B::Ref<'i>).cast()
+    fn borrow_or_steal(&'i self) -> &'o T {
+        (self.borrow_or_steal_gat() as B::Ref<'i>).cast()
     }
 }
 
-impl<'a, T: ?Sized> Boe<T> for &'a T {
+impl<'a, T: ?Sized> Bos<T> for &'a T {
     type Ref<'i> = &'a T where Self: 'i;
 
     #[inline]
-    fn borrow_or_expose_gat(&self) -> Self::Ref<'_> {
+    fn borrow_or_steal_gat(&self) -> Self::Ref<'_> {
         self
     }
 }
 
-macro_rules! impl_boe {
+macro_rules! impl_bos {
     ($($(#[$attr:meta])? $({$($params:tt)*})? $ty:ty => $target:ty $(where {$($bounds:tt)*})?)*) => {
         $(
             $(#[$attr])?
-            impl $(<$($params)*>)? Boe<$target> for $ty $(where $($bounds)*)? {
+            impl $(<$($params)*>)? Bos<$target> for $ty $(where $($bounds)*)? {
                 type Ref<'i> = &'i $target where Self: 'i;
 
                 #[inline]
-                fn borrow_or_expose_gat(&self) -> Self::Ref<'_> {
+                fn borrow_or_steal_gat(&self) -> Self::Ref<'_> {
                     self
                 }
             }
@@ -199,7 +199,7 @@ macro_rules! impl_boe {
     };
 }
 
-impl_boe! {
+impl_bos! {
     {T: ?Sized} T => T
     {T: ?Sized} &mut T => T
 
