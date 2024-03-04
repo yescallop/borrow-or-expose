@@ -103,8 +103,7 @@
 //! - The implementation of [`Bos`] for `&T` copies the reference with lifetime unchanged
 //!   instead of borrowing from it.
 //! - [`Bos`] does not have extra requirements on [`Eq`], [`Ord`] and [`Hash`](core::hash::Hash)
-//!   implementations as [`Borrow`] does. For this reason, you generally should not rely solely
-//!   on [`Bos`] to implement [`Borrow`].
+//!   implementations as [`Borrow`] does.
 //! - Despite being safe to implement, [`Bos`] is not meant to be eagerly implemented as [`AsRef`] is.
 //!   This crate only provides implementations of [`Bos`] for types that currently implement [`Borrow`]
 //!   in the standard library. If this is too restrictive, feel free to copy the code pattern
