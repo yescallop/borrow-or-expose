@@ -47,7 +47,7 @@
 //! [`fmt::Display`]: core::fmt::Display
 //!
 //! ```
-//! use borrow_or_steal::{Bos, BorrowOrSteal};
+//! use borrow_or_steal::{BorrowOrSteal, Bos};
 //! use std::fmt;
 //!
 //! struct Text<T>(T);
@@ -98,7 +98,7 @@
 //!
 //! # Relation between [`Bos`], [`Borrow`] and [`AsRef`]
 //!
-//! [`Bos`] has the same signature as [`Borrow`] and [`AsRef`], but [`Bos`] is different in a few aspects:
+//! [`Bos`] is similar to [`Borrow`] and [`AsRef`], but different in a few aspects:
 //!
 //! - The implementation of [`Bos`] for `&T` copies the reference with lifetime unchanged
 //!   instead of borrowing from it.
