@@ -28,7 +28,7 @@
 //!     t.as_str()
 //! }
 //!
-//! // The returned reference, which is copied from within `t`, lives longer than `t`.
+//! // The returned reference, which is copied from `t.0`, lives longer than `t`.
 //! fn borrowed_as_str(t: Text<&str>) -> &str {
 //!     t.as_str()
 //! }
