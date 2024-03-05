@@ -147,7 +147,7 @@ pub trait Bos<T: ?Sized> {
     where
         Self: 'i;
 
-    /// Borrows from a value or copies a reference from within it,
+    /// Borrows from a value or gets a shared reference from it,
     /// returning a reference of generic associated type.
     fn borrow_or_share_gat(&self) -> Self::Ref<'_>;
 }
@@ -156,7 +156,7 @@ pub trait Bos<T: ?Sized> {
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait BorrowOrShare<'i, 'o, T: ?Sized>: Bos<T> {
-    /// Borrows from a value or copies a reference from within it.
+    /// Borrows from a value or gets a shared reference from it.
     fn borrow_or_share(&'i self) -> &'o T;
 }
 
