@@ -1,22 +1,22 @@
-# borrow-or-steal
+# borrow-or-share
 
-Traits for either borrowing from or copying a reference from within a value.
+Traits for either borrowing data or sharing references.
 
-[![crates.io](https://img.shields.io/crates/v/borrow-or-steal.svg)](https://crates.io/crates/borrow-or-steal)
-[![license](https://img.shields.io/github/license/yescallop/borrow-or-steal?color=blue)](/LICENSE)
+[![crates.io](https://img.shields.io/crates/v/borrow-or-share.svg)](https://crates.io/crates/borrow-or-share)
+[![license](https://img.shields.io/github/license/yescallop/borrow-or-share?color=blue)](/LICENSE)
 
-See the [documentation](https://docs.rs/borrow-or-steal) for a walkthrough of the crate.
+See the [documentation](https://docs.rs/borrow-or-share) for a walkthrough of the crate.
 
 ## TL;DR - The following code compiles
 
 ```rust
-use borrow_or_steal::BorrowOrSteal;
+use borrow_or_share::BorrowOrShare;
 
 struct Text<T>(T);
 
-impl<'i, 'o, T: BorrowOrSteal<'i, 'o, str>> Text<T> {
+impl<'i, 'o, T: BorrowOrShare<'i, 'o, str>> Text<T> {
     fn as_str(&'i self) -> &'o str {
-        self.0.borrow_or_steal()
+        self.0.borrow_or_share()
     }
 }
 

@@ -3,23 +3,23 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]
 
-//! Traits for either borrowing from or copying a reference from within a value.
+//! Traits for either borrowing data or sharing references.
 //!
 //! # Walkthrough
 //!
 //! Suppose that you have a struct `Text<T>` where `T` may be `String` or `&str`.
 //! You want to implement a generic method `as_str` on `Text` which returns
 //! a longest-living reference to the inner string.
-//! This is when [`BorrowOrSteal`] comes in handy:
+//! This is when [`BorrowOrShare`] comes in handy:
 //!
 //! ```
-//! use borrow_or_steal::BorrowOrSteal;
+//! use borrow_or_share::BorrowOrShare;
 //!
 //! struct Text<T>(T);
 //!
-//! impl<'i, 'o, T: BorrowOrSteal<'i, 'o, str>> Text<T> {
+//! impl<'i, 'o, T: BorrowOrShare<'i, 'o, str>> Text<T> {
 //!     fn as_str(&'i self) -> &'o str {
-//!         self.0.borrow_or_steal()
+//!         self.0.borrow_or_share()
 //!     }
 //! }
 //!
@@ -34,41 +34,39 @@
 //! }
 //! ```
 //!
-//! The [`BorrowOrSteal`] trait takes two lifetime parameters `'i`, `'o`,
-//! and a type parameter `T`. Its [`borrow_or_steal`] method takes `&'i self`
-//! and returns `&'o T`. You can use the trait to write your own "borrowing or
-//! reference-copying" functions, like the `as_str` method in the above example.
+//! The [`BorrowOrShare`] trait takes two lifetime parameters `'i`, `'o`,
+//! and a type parameter `T`. Its [`borrow_or_share`] method takes `&'i self`
+//! and returns `&'o T`. You can use the trait to write your own "data-borrowing or
+//! reference-sharing" functions, like the `as_str` method in the above example.
 //!
-//! The lifetime parameters on [`BorrowOrSteal`] can be quite restrictive when
-//! reference-copying behavior is not needed, such as in a [`fmt::Display`] implementation.
+//! The lifetime parameters on [`BorrowOrShare`] can be quite restrictive when
+//! reference-sharing behavior is not needed, such as in an [`AsRef`] implementation.
 //! In such cases, [`Bos`] should be used instead:
 //!
-//! [`borrow_or_steal`]: BorrowOrSteal::borrow_or_steal
-//! [`fmt::Display`]: core::fmt::Display
+//! [`borrow_or_share`]: BorrowOrShare::borrow_or_share
 //!
 //! ```
-//! use borrow_or_steal::{BorrowOrSteal, Bos};
-//! use std::fmt;
+//! use borrow_or_share::{BorrowOrShare, Bos};
 //!
 //! struct Text<T>(T);
 //!
-//! impl<'i, 'o, T: BorrowOrSteal<'i, 'o, str>> Text<T> {
+//! impl<'i, 'o, T: BorrowOrShare<'i, 'o, str>> Text<T> {
 //!     fn as_str(&'i self) -> &'o str {
-//!         self.0.borrow_or_steal()
+//!         self.0.borrow_or_share()
 //!     }
 //! }
 //!
-//! impl<T: Bos<str>> fmt::Display for Text<T> {
-//!     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//!         f.write_str(self.as_str())
+//! impl<T: Bos<str>> AsRef<str> for Text<T> {
+//!     fn as_ref(&self) -> &str {
+//!         self.as_str()
 //!     }
 //! }
 //! ```
 //!
 //! In the above example, the `as_str` method is also available on `Text<T>`
-//! where `T: Bos<str>`, because [`BorrowOrSteal`] is implemented for
+//! where `T: Bos<str>`, because [`BorrowOrShare`] is implemented for
 //! all types that implement [`Bos`]. It also works the other way round
-//! because [`Bos`] is a supertrait of [`BorrowOrSteal`].
+//! because [`Bos`] is a supertrait of [`BorrowOrShare`].
 //!
 //! Note that [`Bos<T>`] is also implemented for other types
 //! such as `T`, `&mut T`, [`Box<T>`], [`Cow<'_, T>`], [`Rc<T>`], and [`Arc<T>`].
@@ -83,14 +81,14 @@
 //! You can also implement [`Bos`] for your own type, for example:
 //!
 //! ```
-//! use borrow_or_steal::Bos;
+//! use borrow_or_share::Bos;
 //!
 //! struct Text<'a>(&'a str);
 //!
 //! impl<'a> Bos<str> for Text<'a> {
 //!     type Ref<'i> = &'a str where Self: 'i;
 //!     
-//!     fn borrow_or_steal_gat(&self) -> Self::Ref<'_> {
+//!     fn borrow_or_share_gat(&self) -> Self::Ref<'_> {
 //!         self.0
 //!     }
 //! }
@@ -140,7 +138,7 @@ mod internal {
 
 use internal::Ref;
 
-/// A trait for borrowing data or copying references.
+/// A trait for either borrowing data or sharing references.
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait Bos<T: ?Sized> {
@@ -149,27 +147,27 @@ pub trait Bos<T: ?Sized> {
     where
         Self: 'i;
 
-    /// Borrows from or copies a reference from within the value,
+    /// Borrows from a value or copies a reference from within it,
     /// returning a reference of type [`Self::Ref`].
-    fn borrow_or_steal_gat(&self) -> Self::Ref<'_>;
+    fn borrow_or_share_gat(&self) -> Self::Ref<'_>;
 }
 
-/// A helper trait for writing "borrowing or reference-copying" functions.
+/// A helper trait for writing "data-borrowing or reference-sharing" functions.
 ///
 /// See the [crate-level documentation](crate) for more details.
-pub trait BorrowOrSteal<'i, 'o, T: ?Sized>: Bos<T> {
-    /// Borrows from or copies a reference from within the value.
-    fn borrow_or_steal(&'i self) -> &'o T;
+pub trait BorrowOrShare<'i, 'o, T: ?Sized>: Bos<T> {
+    /// Borrows from a value or copies a reference from within it.
+    fn borrow_or_share(&'i self) -> &'o T;
 }
 
-impl<'i, 'o, T: ?Sized, B> BorrowOrSteal<'i, 'o, T> for B
+impl<'i, 'o, T: ?Sized, B> BorrowOrShare<'i, 'o, T> for B
 where
     B: Bos<T> + ?Sized + 'i,
     B::Ref<'i>: 'o,
 {
     #[inline]
-    fn borrow_or_steal(&'i self) -> &'o T {
-        (self.borrow_or_steal_gat() as B::Ref<'i>).cast()
+    fn borrow_or_share(&'i self) -> &'o T {
+        (self.borrow_or_share_gat() as B::Ref<'i>).cast()
     }
 }
 
@@ -177,7 +175,7 @@ impl<'a, T: ?Sized> Bos<T> for &'a T {
     type Ref<'i> = &'a T where Self: 'i;
 
     #[inline]
-    fn borrow_or_steal_gat(&self) -> Self::Ref<'_> {
+    fn borrow_or_share_gat(&self) -> Self::Ref<'_> {
         self
     }
 }
@@ -190,7 +188,7 @@ macro_rules! impl_bos {
                 type Ref<'i> = &'i $target where Self: 'i;
 
                 #[inline]
-                fn borrow_or_steal_gat(&self) -> Self::Ref<'_> {
+                fn borrow_or_share_gat(&self) -> Self::Ref<'_> {
                     self
                 }
             }

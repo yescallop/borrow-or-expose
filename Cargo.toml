@@ -1,11 +1,11 @@
 [package]
-name = "borrow-or-steal"
+name = "borrow-or-share"
 version = "0.0.0"
 authors = ["Scallop Ye <yescallop@gmail.com>"]
 edition = "2021"
-description = "Traits for either borrowing from or copying a reference from within a value"
-documentation = "https://docs.rs/borrow-or-steal"
-repository = "https://github.com/yescallop/borrow-or-steal"
+description = "Traits for either borrowing data or sharing references"
+documentation = "https://docs.rs/borrow-or-share"
+repository = "https://github.com/yescallop/borrow-or-share"
 license = "CC0-1.0"
 categories = ["rust-patterns"]
 
