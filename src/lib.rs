@@ -88,8 +88,8 @@
 //! impl<'a> Bos<str> for Text<'a> {
 //!     type Ref<'i> = &'a str where Self: 'i;
 //!     
-//!     fn borrow_or_share_gat(&self) -> Self::Ref<'_> {
-//!         self.0
+//!     fn borrow_or_share(this: &Self) -> Self::Ref<'_> {
+//!         this.0
 //!     }
 //! }
 //! ```
@@ -147,8 +147,8 @@ pub trait Bos<T: ?Sized> {
         Self: 'i;
 
     /// Borrows from a value or gets a shared reference from it,
-    /// returning a reference of generic associated type.
-    fn borrow_or_share_gat(&self) -> Self::Ref<'_>;
+    /// returning a reference of type [`Self::Ref`].
+    fn borrow_or_share(this: &Self) -> Self::Ref<'_>;
 }
 
 /// A helper trait for writing "data-borrowing or reference-sharing" functions.
@@ -166,7 +166,7 @@ where
 {
     #[inline]
     fn borrow_or_share(&'i self) -> &'o T {
-        (self.borrow_or_share_gat() as B::Ref<'i>).cast()
+        (B::borrow_or_share(self) as B::Ref<'i>).cast()
     }
 }
 
@@ -174,8 +174,8 @@ impl<'a, T: ?Sized> Bos<T> for &'a T {
     type Ref<'i> = &'a T where Self: 'i;
 
     #[inline]
-    fn borrow_or_share_gat(&self) -> Self::Ref<'_> {
-        self
+    fn borrow_or_share(this: &Self) -> Self::Ref<'_> {
+        this
     }
 }
 
@@ -187,8 +187,8 @@ macro_rules! impl_bos {
                 type Ref<'i> = &'i $target where Self: 'i;
 
                 #[inline]
-                fn borrow_or_share_gat(&self) -> Self::Ref<'_> {
-                    self
+                fn borrow_or_share(this: &Self) -> Self::Ref<'_> {
+                    this
                 }
             }
         )*
