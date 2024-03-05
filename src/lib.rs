@@ -148,7 +148,7 @@ pub trait Bos<T: ?Sized> {
         Self: 'i;
 
     /// Borrows from a value or copies a reference from within it,
-    /// returning a reference of type [`Self::Ref`].
+    /// returning a reference of generic associated type.
     fn borrow_or_share_gat(&self) -> Self::Ref<'_>;
 }
 
