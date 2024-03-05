@@ -23,12 +23,12 @@
 //!     }
 //! }
 //!
-//! // The returned reference, which is borrowed from `*t`, lives as long as `t`.
+//! // The returned reference is borrowed from `*t` and lives as long as `t`.
 //! fn owned_as_str(t: &Text<String>) -> &str {
 //!     t.as_str()
 //! }
 //!
-//! // The returned reference, which is copied from `t.0`, lives longer than `t`.
+//! // The returned reference is copied from `t.0` and lives longer than `t`.
 //! fn borrowed_as_str(t: Text<&str>) -> &str {
 //!     t.as_str()
 //! }
@@ -98,8 +98,7 @@
 //!
 //! [`Bos`] is similar to [`Borrow`] and [`AsRef`], but different in a few aspects:
 //!
-//! - The implementation of [`Bos`] for `&T` copies the reference with lifetime unchanged
-//!   instead of borrowing from it.
+//! - The implementation of [`Bos`] for `&T` copies the reference instead of borrowing from it.
 //! - [`Bos`] does not have extra requirements on [`Eq`], [`Ord`] and [`Hash`](core::hash::Hash)
 //!   implementations as [`Borrow`] does.
 //! - Despite being safe to implement, [`Bos`] is not meant to be eagerly implemented as [`AsRef`] is.

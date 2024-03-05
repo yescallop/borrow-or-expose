@@ -7,7 +7,7 @@ Traits for either borrowing data or sharing references.
 
 See the [documentation](https://docs.rs/borrow-or-share) for a walkthrough of the crate.
 
-## TL;DR - The following code compiles
+## Basic example
 
 ```rust
 use borrow_or_share::BorrowOrShare;
@@ -20,12 +20,12 @@ impl<'i, 'o, T: BorrowOrShare<'i, 'o, str>> Text<T> {
     }
 }
 
-// The returned reference, which is borrowed from `*t`, lives as long as `t`.
+// The returned reference is borrowed from `*t` and lives as long as `t`.
 fn owned_as_str(t: &Text<String>) -> &str {
     t.as_str()
 }
 
-// The returned reference, which is copied from `t.0`, lives longer than `t`.
+// The returned reference is copied from `t.0` and lives longer than `t`.
 fn borrowed_as_str(t: Text<&str>) -> &str {
     t.as_str()
 }
