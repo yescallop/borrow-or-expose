@@ -68,15 +68,14 @@
 //! all types that implement [`Bos`]. It also works the other way round
 //! because [`Bos`] is a supertrait of [`BorrowOrShare`].
 //!
-//! Note that [`Bos<T>`] is also implemented for other types
-//! such as `T`, `&mut T`, [`Box<T>`], [`Cow<'_, T>`], [`Rc<T>`], and [`Arc<T>`].
+//! Note that [`Bos<T>`] is also [implemented for other types][impls] such as `T`,
+//! `&mut T`, [`Box<T>`], and [`Rc<T>`].
 //! Consider adding extra trait bounds, preferably on a function that
 //! constructs your type, if this is not desirable.
 //!
+//! [impls]: Bos#foreign-impls
 //! [`Box<T>`]: alloc::boxed::Box
-//! [`Cow<'_, T>`]: alloc::borrow::Cow
 //! [`Rc<T>`]: alloc::rc::Rc
-//! [`Arc<T>`]: alloc::sync::Arc
 //!
 //! You can also implement [`Bos`] for your own type, for example:
 //!
@@ -86,7 +85,7 @@
 //! struct Text<'a>(&'a str);
 //!
 //! impl<'a> Bos<str> for Text<'a> {
-//!     type Ref<'i> = &'a str where Self: 'i;
+//!     type Ref<'this> = &'a str where Self: 'this;
 //!     
 //!     fn borrow_or_share(this: &Self) -> Self::Ref<'_> {
 //!         this.0
@@ -94,12 +93,13 @@
 //! }
 //! ```
 //!
-//! # Relation between [`Bos`], [`Borrow`] and [`AsRef`]
+//! # Relation between [`Bos`], [`Borrow`], and [`AsRef`]
 //!
 //! [`Bos`] is similar to [`Borrow`] and [`AsRef`], but different in a few aspects:
 //!
-//! - The implementation of [`Bos`] for `&T` copies the reference instead of borrowing from it.
-//! - [`Bos`] does not have extra requirements on [`Eq`], [`Ord`] and [`Hash`](core::hash::Hash)
+//! - The implementation of [`Bos`] for `&T` copies the reference with lifetime unchanged
+//!   instead of borrowing from it.
+//! - [`Bos`] does not have extra requirements on [`Eq`], [`Ord`], and [`Hash`](core::hash::Hash)
 //!   implementations as [`Borrow`] does.
 //! - Despite being safe to implement, [`Bos`] is not meant to be eagerly implemented as [`AsRef`] is.
 //!   This crate only provides implementations of [`Bos`] for types that currently implement [`Borrow`]
@@ -141,10 +141,10 @@ use internal::Ref;
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait Bos<T: ?Sized> {
-    /// The resulting reference type (must be `&T`), which may outlive `'i`.
-    type Ref<'i>: Ref<T>
+    /// The resulting reference type. This must be `&'a T` where `'a: 'this`.
+    type Ref<'this>: Ref<T>
     where
-        Self: 'i;
+        Self: 'this;
 
     /// Borrows from a value or gets a shared reference from it,
     /// returning a reference of type [`Self::Ref`].
@@ -171,7 +171,7 @@ where
 }
 
 impl<'a, T: ?Sized> Bos<T> for &'a T {
-    type Ref<'i> = &'a T where Self: 'i;
+    type Ref<'this> = &'a T where Self: 'this;
 
     #[inline]
     fn borrow_or_share(this: &Self) -> Self::Ref<'_> {
@@ -184,7 +184,7 @@ macro_rules! impl_bos {
         $(
             $(#[$attr])?
             impl $(<$($params)*>)? Bos<$target> for $ty $(where $($bounds)*)? {
-                type Ref<'i> = &'i $target where Self: 'i;
+                type Ref<'this> = &'this $target where Self: 'this;
 
                 #[inline]
                 fn borrow_or_share(this: &Self) -> Self::Ref<'_> {
