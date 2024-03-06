@@ -141,7 +141,7 @@ use internal::Ref;
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait Bos<T: ?Sized> {
-    /// The resulting reference type. May only be `&'a T` where `'a: 'this`.
+    /// The resulting reference type. May only be `&T`.
     type Ref<'this>: Ref<T>
     where
         Self: 'this;
