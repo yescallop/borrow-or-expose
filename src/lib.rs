@@ -141,7 +141,7 @@ use internal::Ref;
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait Bos<T: ?Sized> {
-    /// The resulting reference type. This must be `&'a T` where `'a: 'this`.
+    /// The resulting reference type. May only be `&'a T` where `'a: 'this`.
     type Ref<'this>: Ref<T>
     where
         Self: 'this;
@@ -180,10 +180,10 @@ impl<'a, T: ?Sized> Bos<T> for &'a T {
 }
 
 macro_rules! impl_bos {
-    ($($(#[$attr:meta])? $({$($params:tt)*})? $ty:ty => $target:ty $(where {$($bounds:tt)*})?)*) => {
+    ($($(#[$attr:meta])? $({$($params:tt)*})? $ty:ty => $target:ty)*) => {
         $(
             $(#[$attr])?
-            impl $(<$($params)*>)? Bos<$target> for $ty $(where $($bounds)*)? {
+            impl $(<$($params)*>)? Bos<$target> for $ty {
                 type Ref<'this> = &'this $target where Self: 'this;
 
                 #[inline]
@@ -212,7 +212,6 @@ impl_bos! {
 
     {T: ?Sized} alloc::boxed::Box<T> => T
     {B: ?Sized + alloc::borrow::ToOwned} alloc::borrow::Cow<'_, B> => B
-        where {B::Owned: core::borrow::Borrow<B>}
 
     {T: ?Sized} alloc::rc::Rc<T> => T
     {T: ?Sized} alloc::sync::Arc<T> => T
