@@ -3,14 +3,37 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]
 
-//! Traits for either borrowing data or sharing references.
+//! Traits for either borrowing or sharing data.
 //!
 //! # Walkthrough
 //!
-//! Suppose that you have a struct `Text<T>` where `T` may be `String` or `&str`.
-//! You want to implement a generic method `as_str` on `Text` which returns
-//! a longest-living reference to the inner string.
-//! This is when [`BorrowOrShare`] comes in handy:
+//! Suppose that you have a generic type that either owns some data or holds a reference to them.
+//! You want to implement a method on this type that either borrows from `*self`
+//! or from behind a reference it holds. A naive way to do this would be
+//! to duplicate the method declaration:
+//!
+//! ```
+//! struct Text<T>(T);
+//!
+//! impl Text<String> {
+//!     // The returned reference is borrowed from `*self`.
+//!     fn as_str(&self) -> &str {
+//!         &self.0
+//!     }
+//! }
+//!
+//! impl<'a> Text<&'a str> {
+//!     // The returned reference is borrowed from `*self.0`.
+//!     fn as_str(&self) -> &'a str {
+//!         self.0
+//!     }
+//! }
+//! ```
+//!
+//! However, when you add more methods to `Text`, it would be
+//! intolerably verbose to duplicate them for every `T`.
+//! This crate thus provides a [`BorrowOrShare`] trait which can be used to
+//! simplify the above code by making the `as_str` method generic over `T`:
 //!
 //! ```
 //! use borrow_or_share::BorrowOrShare;
@@ -23,27 +46,37 @@
 //!     }
 //! }
 //!
-//! // The returned reference is borrowed from `*t` and lives as long as `t`.
+//! // The returned reference is borrowed from `*t`.
 //! fn owned_as_str(t: &Text<String>) -> &str {
 //!     t.as_str()
 //! }
 //!
-//! // The returned reference is copied from `t.0` and lives longer than `t`.
-//! fn borrowed_as_str(t: Text<&str>) -> &str {
+//! // The returned reference is borrowed from `*t.0`.
+//! fn borrowed_as_str<'a>(t: &Text<&'a str>) -> &'a str {
 //!     t.as_str()
 //! }
 //! ```
 //!
 //! The [`BorrowOrShare`] trait takes two lifetime parameters `'i`, `'o`,
-//! and a type parameter `T`. Its [`borrow_or_share`] method takes `&'i self`
-//! and returns `&'o T`. You can use the trait to write your own "data-borrowing or
-//! reference-sharing" functions, like the `as_str` method in the above example.
+//! and a type parameter `T`. When used, it implies an "associated lifetime bound":
+//! for `Self = String` it implies `'i: 'o`, whereas for `Self = &'a str`
+//! it implies `'a: 'o`.
+//! The trait is also implemented for other types, which we'll cover later.
 //!
-//! The lifetime parameters on [`BorrowOrShare`] can be quite restrictive when
-//! reference-sharing behavior is not needed, such as in an [`AsRef`] implementation.
-//! In such cases, [`Bos`] should be used instead:
+//! On the trait is a [`borrow_or_share`] method which turns
+//! `&'i self` into `&'o T`. You use it to write your own
+//! "data borrowing-or-sharing" functions. A typical usage would be
+//! to require a `BorrowOrShare<'i, 'o, str>` bound on a type parameter `T`
+//! in an `impl` block of your type, within which you implement
+//! a method that turns `&'i self` into some type with lifetime `'o`,
+//! by calling the [`borrow_or_share`] method on some value of `T`
+//! contained in `self` and further processing the returned `&'o str`.
 //!
 //! [`borrow_or_share`]: BorrowOrShare::borrow_or_share
+//!
+//! The lifetime parameters on [`BorrowOrShare`] can be quite restrictive
+//! when data-sharing behavior is not needed, such as in an [`AsRef`]
+//! implementation. In such cases, [`Bos`] should be used instead:
 //!
 //! ```
 //! use borrow_or_share::{BorrowOrShare, Bos};
@@ -68,8 +101,8 @@
 //! all types that implement [`Bos`]. It also works the other way round
 //! because [`Bos`] is a supertrait of [`BorrowOrShare`].
 //!
-//! Note that [`Bos<T>`] is also [implemented for other types][impls] such as `T`,
-//! `&mut T`, [`Box<T>`], and [`Rc<T>`].
+//! Note that [`Bos<T>`] is also [implemented for other types][impls]
+//! such as `&mut T`, [`Box<T>`], and [`Rc<T>`].
 //! Consider adding extra trait bounds, preferably on a function that
 //! constructs your type, if this is not desirable.
 //!
@@ -93,25 +126,19 @@
 //! }
 //! ```
 //!
-//! # Relation between [`Bos`], [`Borrow`], and [`AsRef`]
+//! # Limitations
 //!
-//! [`Bos`] is similar to [`Borrow`] and [`AsRef`], but different in a few aspects:
-//!
-//! - The implementation of [`Bos`] for `&T` copies the reference with lifetime unchanged
-//!   instead of borrowing from it.
-//! - [`Bos`] does not have extra requirements on [`Eq`], [`Ord`], and [`Hash`](core::hash::Hash)
-//!   implementations as [`Borrow`] does.
-//! - Despite being safe to implement, [`Bos`] is not meant to be eagerly implemented as [`AsRef`] is.
-//!   This crate only provides implementations of [`Bos`] for types that currently implement [`Borrow`]
-//!   in the standard library. If this is too restrictive, feel free to copy the code pattern
-//!   from this crate as you wish.
+//! This crate only provides implementations of [`Bos`] for types that
+//! currently implement [`Borrow`] in the standard library, except for
+//! the blanket implementation. If this is too restrictive, feel free
+//! to copy the code pattern from this crate as you wish.
 //!
 //! [`Borrow`]: core::borrow::Borrow
 //!
 //! # Crate features
 //!
-//! - `std` (default): Enables [`Bos`] implementations
-//!   for [`OsString`](std::ffi::OsString) and [`PathBuf`](std::path::PathBuf).
+//! - `std` (disabled by default): Enables [`Bos`] implementations for
+//!   [`OsString`](std::ffi::OsString) and [`PathBuf`](std::path::PathBuf).
 
 extern crate alloc;
 #[cfg(feature = "std")]
@@ -137,7 +164,7 @@ mod internal {
 
 use internal::Ref;
 
-/// A trait for either borrowing data or sharing references.
+/// A trait for either borrowing or sharing data.
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait Bos<T: ?Sized> {
@@ -146,16 +173,16 @@ pub trait Bos<T: ?Sized> {
     where
         Self: 'this;
 
-    /// Borrows from a value or gets a shared reference from it,
+    /// Borrows from `*this` or from behind a reference it holds,
     /// returning a reference of type [`Self::Ref`].
     fn borrow_or_share(this: &Self) -> Self::Ref<'_>;
 }
 
-/// A helper trait for writing "data-borrowing or reference-sharing" functions.
+/// A helper trait for writing "data borrowing-or-sharing" functions.
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait BorrowOrShare<'i, 'o, T: ?Sized>: Bos<T> {
-    /// Borrows from a value or gets a shared reference from it.
+    /// Borrows from `*self` or from behind a reference it holds.
     fn borrow_or_share(&'i self) -> &'o T;
 }
 
@@ -196,7 +223,11 @@ macro_rules! impl_bos {
 }
 
 impl_bos! {
-    {T: ?Sized} T => T
+    // A blanket impl would show up everywhere in the
+    // documentation of a dependent crate, which is noisy.
+    // So we're omitting it for the moment.
+    // {T: ?Sized} T => T
+
     {T: ?Sized} &mut T => T
 
     {T, const N: usize} [T; N] => [T]

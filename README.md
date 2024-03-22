@@ -1,13 +1,13 @@
 # borrow-or-share
 
-Traits for either borrowing data or sharing references.
+Traits for either borrowing or sharing data.
 
 [![crates.io](https://img.shields.io/crates/v/borrow-or-share.svg)](https://crates.io/crates/borrow-or-share)
 [![license](https://img.shields.io/github/license/yescallop/borrow-or-share?color=blue)](/LICENSE)
 
-See the [documentation](https://docs.rs/borrow-or-share) for a walkthrough of the crate.
-
-## Basic example
+Suppose that you have a generic type that either owns some data or holds a reference to them.
+You can use this crate to implement a method on this type that either borrows from `*self`
+or from behind a reference it holds. Here is a basic example of this usage:
 
 ```rust
 use borrow_or_share::BorrowOrShare;
@@ -20,16 +20,18 @@ impl<'i, 'o, T: BorrowOrShare<'i, 'o, str>> Text<T> {
     }
 }
 
-// The returned reference is borrowed from `*t` and lives as long as `t`.
+// The returned reference is borrowed from `*t`.
 fn owned_as_str(t: &Text<String>) -> &str {
     t.as_str()
 }
 
-// The returned reference is copied from `t.0` and lives longer than `t`.
-fn borrowed_as_str(t: Text<&str>) -> &str {
+// The returned reference is borrowed from `*t.0`.
+fn borrowed_as_str<'a>(t: &Text<&'a str>) -> &'a str {
     t.as_str()
 }
 ```
+
+See the [documentation](https://docs.rs/borrow-or-share) for a walkthrough of the crate.
 
 ## Credit
 
