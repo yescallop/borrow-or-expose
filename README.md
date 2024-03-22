@@ -5,8 +5,8 @@ Traits for either borrowing or sharing data.
 [![crates.io](https://img.shields.io/crates/v/borrow-or-share.svg)](https://crates.io/crates/borrow-or-share)
 [![license](https://img.shields.io/github/license/yescallop/borrow-or-share?color=blue)](/LICENSE)
 
-Suppose that you have a generic type that either owns some data or holds a reference to them.
-You can use this crate to implement a method on this type that either borrows from `*self`
+Suppose that you have a generic type which either owns some data or holds a reference to them.
+You can use this crate to implement on this type a method taking `&self` which either borrows from `*self`
 or from behind a reference it holds. Here is a basic example of this usage:
 
 ```rust

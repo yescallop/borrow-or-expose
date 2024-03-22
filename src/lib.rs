@@ -7,8 +7,8 @@
 //!
 //! # Walkthrough
 //!
-//! Suppose that you have a generic type that either owns some data or holds a reference to them.
-//! You want to implement a method on this type that either borrows from `*self`
+//! Suppose that you have a generic type which either owns some data or holds a reference to them.
+//! You want to implement on this type a method taking `&self` which either borrows from `*self`
 //! or from behind a reference it holds. A naive way to do this would be
 //! to duplicate the method declaration:
 //!
