@@ -7,8 +7,8 @@
 //!
 //! # Walkthrough
 //!
-//! Suppose that you have a generic type which either owns some data or holds a reference to them.
-//! You want to implement on this type a method taking `&self` which either borrows from `*self`
+//! Suppose that you have a generic type that either owns some data or holds a reference to them.
+//! You want to implement on this type a method taking `&self` that either borrows from `*self`
 //! or from behind a reference it holds. A naive way to do this would be
 //! to duplicate the method declaration:
 //!
@@ -30,10 +30,10 @@
 //! }
 //! ```
 //!
-//! However, when you add more methods to `Text`, it would be
-//! intolerably verbose to duplicate them for every `T`.
-//! This crate thus provides a [`BorrowOrShare`] trait you can use to
-//! simplify the above code by making the `as_str` method generic over `T`:
+//! However, when you add more methods to `Text`, the code would become
+//! intolerably verbose. This crate thus provides a [`BorrowOrShare`] trait
+//! you can use to simplify the above code by making the `as_str` method
+//! generic over `T`:
 //!
 //! ```
 //! use borrow_or_share::BorrowOrShare;
@@ -58,17 +58,16 @@
 //! ```
 //!
 //! The [`BorrowOrShare`] trait takes two lifetime parameters `'i`, `'o`,
-//! and a type parameter `T`. When used, it implies an "associated lifetime bound":
-//! for `Self = String` it implies `'i: 'o`, whereas for `Self = &'a str`
-//! it implies `'a: 'o`.
-//! The trait is also implemented for other types, which we'll cover later.
+//! and a type parameter `T`. For `T = str` it is implemented on `String`
+//! wherever `'i: 'o`, while on `&'a str` wherever `'a: 'i + 'o`.
+//! The trait is also implemented on other types, which we'll cover later.
 //!
-//! On the trait is a [`borrow_or_share`] method taking `&'i self`
-//! and returning `&'o T`. You can use it to write your own
+//! On the trait is a [`borrow_or_share`] method that takes `&'i self`
+//! and returns `&'o T`. You can use it to write your own
 //! "data borrowing-or-sharing" functions. A typical usage would be
 //! to put a `BorrowOrShare<'i, 'o, str>` bound on a type parameter `T`
 //! taken by an `impl` block of your type. Within the block, you implement
-//! a method taking `&'i self` and returning something with lifetime `'o`,
+//! a method that takes `&'i self` and returns something with lifetime `'o`,
 //! by calling the [`borrow_or_share`] method on some `T`
 //! contained in `self` and further processing the returned `&'o str`.
 //!
@@ -76,10 +75,10 @@
 //!
 //! Despite the convenience of using [`BorrowOrShare`],
 //! you'll often have to fallback to the usual borrowing behavior.
-//! For example, you may want to implement [`AsRef`] for `Text`,
+//! For example, you may want to implement [`AsRef`] on `Text`,
 //! which requires an `as_ref` method that borrows from `*self`.
 //! The code won't compile, however, if you put the same [`BorrowOrShare`]
-//! bound and call `self.as_str()` in the [`AsRef`] impl:
+//! bound and write `self.as_str()` in the [`AsRef`] impl:
 //!
 //! ```compile_fail
 //! use borrow_or_share::BorrowOrShare;
@@ -122,12 +121,12 @@
 //! ```
 //!
 //! In the above example, the `as_str` method is also available on `Text<T>`
-//! where `T: Bos<str>`, because [`BorrowOrShare`] is implemented for
+//! where `T: Bos<str>`, because [`BorrowOrShare`] is implemented on
 //! all types that implement [`Bos`]. It also works the other way round
 //! because [`Bos`] is a supertrait of [`BorrowOrShare`].
 //!
 //! This crate provides [`Bos`] (and [`BorrowOrShare`]) implementations
-//! for [`&T`](reference), [`&mut T`](reference), [`[T; N]`](array),
+//! on [`&T`](reference), [`&mut T`](reference), [`[T; N]`](array),
 //! [`Vec<T>`], [`String`], [`CString`], [`OsString`], [`PathBuf`],
 //! [`Box<T>`], [`Cow<'_, B>`], [`Rc<T>`], and [`Arc<T>`]. If some of
 //! these are out of scope, consider putting extra trait bounds in your
@@ -135,7 +134,7 @@
 //! 
 //! [`Cow<'_, B>`]: Cow
 //!
-//! You can also implement [`Bos`] for your own type, for example:
+//! You can also implement [`Bos`] on your own type, for example:
 //!
 //! ```
 //! use borrow_or_share::Bos;
@@ -153,7 +152,7 @@
 //!
 //! # Limitations
 //!
-//! This crate only provides implementations of [`Bos`] for types that
+//! This crate only provides implementations of [`Bos`] on types that
 //! currently implement [`Borrow`] in the standard library, not including
 //! the blanket implementation. If this is too restrictive, feel free
 //! to copy the code pattern from this crate as you wish.
@@ -162,7 +161,7 @@
 //!
 //! # Crate features
 //!
-//! - `std` (disabled by default): Enables [`Bos`] implementations for
+//! - `std` (disabled by default): Enables [`Bos`] implementations on
 //!   [`OsString`] and [`PathBuf`].
 
 extern crate alloc;
