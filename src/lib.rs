@@ -16,14 +16,16 @@
 //! struct Text<T>(T);
 //!
 //! impl Text<String> {
-//!     // The returned reference is borrowed from `*self`.
+//!     // The returned reference is borrowed from `*self`
+//!     // and lives as long as `self`.
 //!     fn as_str(&self) -> &str {
 //!         &self.0
 //!     }
 //! }
 //!
 //! impl<'a> Text<&'a str> {
-//!     // The returned reference is borrowed from `*self.0`.
+//!     // The returned reference is borrowed from `*self.0`, lives
+//!     // longer than `self` and is said to be shared with `*self`.
 //!     fn as_str(&self) -> &'a str {
 //!         self.0
 //!     }
@@ -46,14 +48,16 @@
 //!     }
 //! }
 //!
-//! // The returned reference is borrowed from `*t`.
-//! fn owned_as_str(t: &Text<String>) -> &str {
-//!     t.as_str()
+//! // The returned reference is borrowed from `*text`
+//! // and lives as long as `text`.
+//! fn borrow(text: &Text<String>) -> &str {
+//!     text.as_str()
 //! }
 //!
-//! // The returned reference is borrowed from `*t.0`.
-//! fn borrowed_as_str<'a>(t: &Text<&'a str>) -> &'a str {
-//!     t.as_str()
+//! // The returned reference is borrowed from `*text.0`, lives
+//! // longer than `text` and is said to be shared with `*text`.
+//! fn share<'a>(text: &Text<&'a str>) -> &'a str {
+//!     text.as_str()
 //! }
 //! ```
 //!
@@ -73,10 +77,11 @@
 //!
 //! [`borrow_or_share`]: BorrowOrShare::borrow_or_share
 //!
-//! Despite the convenience of using [`BorrowOrShare`],
-//! you'll often have to fallback to the usual borrowing behavior.
-//! For example, you may want to implement [`AsRef`] on `Text`,
-//! which requires an `as_ref` method that must borrow from `*self`.
+//! While you're happy with the different behavior of the `as_str` method
+//! on `Text<String>` (borrowing) and on `Text<&str>` (sharing), you still
+//! have to fall back on borrowing when dealing with generic `Text<T>`.
+//! For example, you may want to implement [`AsRef`] on `Text<T>`,
+//! which requires an `as_ref` method that always borrows from `*self`.
 //! The code won't compile, however, if you put the same [`BorrowOrShare`]
 //! bound and write `self.as_str()` in the [`AsRef`] impl:
 //!
@@ -215,6 +220,8 @@ pub trait Bos<T: ?Sized> {
 
     /// Borrows from `*this` or from behind a reference it holds,
     /// returning a reference of type [`Self::Ref`].
+    ///
+    /// In the latter case, the returned reference is said to be *shared* with `*this`.
     fn borrow_or_share(this: &Self) -> Self::Ref<'_>;
 }
 
@@ -223,6 +230,8 @@ pub trait Bos<T: ?Sized> {
 /// See the [crate-level documentation](crate) for more details.
 pub trait BorrowOrShare<'i, 'o, T: ?Sized>: Bos<T> {
     /// Borrows from `*self` or from behind a reference it holds.
+    ///
+    /// In the latter case, the returned reference is said to be *shared* with `*self`.
     fn borrow_or_share(&'i self) -> &'o T;
 }
 

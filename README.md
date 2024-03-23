@@ -25,14 +25,16 @@ impl<'i, 'o, T: BorrowOrShare<'i, 'o, str>> Text<T> {
     }
 }
 
-// The returned reference is borrowed from `*t`.
-fn owned_as_str(t: &Text<String>) -> &str {
-    t.as_str()
+// The returned reference is borrowed from `*text`
+// and lives as long as `text`.
+fn borrow(text: &Text<String>) -> &str {
+    text.as_str()
 }
 
-// The returned reference is borrowed from `*t.0`.
-fn borrowed_as_str<'a>(t: &Text<&'a str>) -> &'a str {
-    t.as_str()
+// The returned reference is borrowed from `*text.0`, lives
+// longer than `text` and is said to be shared with `*text`.
+fn share<'a>(t: &Text<&'a str>) -> &'a str {
+    text.as_str()
 }
 ```
 
