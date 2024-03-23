@@ -30,7 +30,7 @@
 //! }
 //! ```
 //!
-//! However, when you add more methods to `Text`, the code would become
+//! However, if you add more methods to `Text`, the code would become
 //! intolerably verbose. This crate thus provides a [`BorrowOrShare`] trait
 //! you can use to simplify the above code by making the `as_str` method
 //! generic over `T`:
@@ -64,7 +64,7 @@
 //!
 //! On the trait is a [`borrow_or_share`] method that takes `&'i self`
 //! and returns `&'o T`. You can use it to write your own
-//! "data borrowing-or-sharing" functions. A typical usage would be
+//! "data borrowing or sharing" functions. A typical usage would be
 //! to put a `BorrowOrShare<'i, 'o, str>` bound on a type parameter `T`
 //! taken by an `impl` block of your type. Within the block, you implement
 //! a method that takes `&'i self` and returns something with lifetime `'o`,
@@ -76,7 +76,7 @@
 //! Despite the convenience of using [`BorrowOrShare`],
 //! you'll often have to fallback to the usual borrowing behavior.
 //! For example, you may want to implement [`AsRef`] on `Text`,
-//! which requires an `as_ref` method that borrows from `*self`.
+//! which requires an `as_ref` method that must borrow from `*self`.
 //! The code won't compile, however, if you put the same [`BorrowOrShare`]
 //! bound and write `self.as_str()` in the [`AsRef`] impl:
 //!
@@ -218,7 +218,7 @@ pub trait Bos<T: ?Sized> {
     fn borrow_or_share(this: &Self) -> Self::Ref<'_>;
 }
 
-/// A helper trait for writing "data borrowing-or-sharing" functions.
+/// A helper trait for writing "data borrowing or sharing" functions.
 ///
 /// See the [crate-level documentation](crate) for more details.
 pub trait BorrowOrShare<'i, 'o, T: ?Sized>: Bos<T> {
