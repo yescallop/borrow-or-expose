@@ -32,7 +32,7 @@
 //!
 //! However, when you add more methods to `Text`, it would be
 //! intolerably verbose to duplicate them for every `T`.
-//! This crate thus provides a [`BorrowOrShare`] trait which can be used to
+//! This crate thus provides a [`BorrowOrShare`] trait you can use to
 //! simplify the above code by making the `as_str` method generic over `T`:
 //!
 //! ```
@@ -63,20 +63,45 @@
 //! it implies `'a: 'o`.
 //! The trait is also implemented for other types, which we'll cover later.
 //!
-//! On the trait is a [`borrow_or_share`] method which turns
-//! `&'i self` into `&'o T`. You use it to write your own
+//! On the trait is a [`borrow_or_share`] method taking `&'i self`
+//! and returning `&'o T`. You can use it to write your own
 //! "data borrowing-or-sharing" functions. A typical usage would be
-//! to require a `BorrowOrShare<'i, 'o, str>` bound on a type parameter `T`
-//! in an `impl` block of your type, within which you implement
-//! a method that turns `&'i self` into some type with lifetime `'o`,
-//! by calling the [`borrow_or_share`] method on some value of `T`
+//! to put a `BorrowOrShare<'i, 'o, str>` bound on a type parameter `T`
+//! taken by an `impl` block of your type. Within the block, you implement
+//! a method taking `&'i self` and returning something with lifetime `'o`,
+//! by calling the [`borrow_or_share`] method on some `T`
 //! contained in `self` and further processing the returned `&'o str`.
 //!
 //! [`borrow_or_share`]: BorrowOrShare::borrow_or_share
 //!
-//! The lifetime parameters on [`BorrowOrShare`] can be quite restrictive
-//! when data-sharing behavior is not needed, such as in an [`AsRef`]
-//! implementation. In such cases, [`Bos`] should be used instead:
+//! Despite the convenience of using [`BorrowOrShare`],
+//! you'll often have to fallback to the usual borrowing behavior.
+//! For example, you may want to implement [`AsRef`] for `Text`,
+//! which requires an `as_ref` method that borrows from `*self`.
+//! The code won't compile, however, if you put the same [`BorrowOrShare`]
+//! bound and call `self.as_str()` in the [`AsRef`] impl:
+//!
+//! ```compile_fail
+//! use borrow_or_share::BorrowOrShare;
+//!
+//! struct Text<T>(T);
+//!
+//! impl<'i, 'o, T: BorrowOrShare<'i, 'o, str>> Text<T> {
+//!     fn as_str(&'i self) -> &'o str {
+//!         self.0.borrow_or_share()
+//!     }
+//! }
+//!
+//! impl<'i, 'o, T: BorrowOrShare<'i, 'o, str>> AsRef<str> for Text<T> {
+//!     fn as_ref(&self) -> &str {
+//!         self.as_str()
+//!     }
+//! }
+//! ```
+//!
+//! The problem is that in the [`AsRef`] impl, the anonymous lifetime
+//! `'1` of `self` does not satisfy the bounds `'1: 'i` and `'o: '1`.
+//! The idiomatic solution is to put a [`Bos`] bound instead:
 //!
 //! ```
 //! use borrow_or_share::{BorrowOrShare, Bos};
@@ -101,14 +126,14 @@
 //! all types that implement [`Bos`]. It also works the other way round
 //! because [`Bos`] is a supertrait of [`BorrowOrShare`].
 //!
-//! Note that [`Bos<T>`] is also [implemented for other types][impls]
-//! such as `&mut T`, [`Box<T>`], and [`Rc<T>`].
-//! Consider adding extra trait bounds, preferably on a function that
-//! constructs your type, if this is not desirable.
-//!
-//! [impls]: Bos#foreign-impls
-//! [`Box<T>`]: alloc::boxed::Box
-//! [`Rc<T>`]: alloc::rc::Rc
+//! This crate provides [`Bos`] (and [`BorrowOrShare`]) implementations
+//! for [`&T`](reference), [`&mut T`](reference), [`[T; N]`](array),
+//! [`Vec<T>`], [`String`], [`CString`], [`OsString`], [`PathBuf`],
+//! [`Box<T>`], [`Cow<'_, B>`], [`Rc<T>`], and [`Arc<T>`]. If some of
+//! these are out of scope, consider putting extra trait bounds in your
+//! code, preferably on a function that constructs your type.
+//! 
+//! [`Cow<'_, B>`]: Cow
 //!
 //! You can also implement [`Bos`] for your own type, for example:
 //!
@@ -129,7 +154,7 @@
 //! # Limitations
 //!
 //! This crate only provides implementations of [`Bos`] for types that
-//! currently implement [`Borrow`] in the standard library, except for
+//! currently implement [`Borrow`] in the standard library, not including
 //! the blanket implementation. If this is too restrictive, feel free
 //! to copy the code pattern from this crate as you wish.
 //!
@@ -138,10 +163,10 @@
 //! # Crate features
 //!
 //! - `std` (disabled by default): Enables [`Bos`] implementations for
-//!   [`OsString`](std::ffi::OsString) and [`PathBuf`](std::path::PathBuf).
+//!   [`OsString`] and [`PathBuf`].
 
 extern crate alloc;
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", doc))]
 extern crate std;
 
 mod internal {
@@ -162,7 +187,23 @@ mod internal {
     }
 }
 
+use alloc::{
+    borrow::{Cow, ToOwned},
+    boxed::Box,
+    ffi::CString,
+    rc::Rc,
+    string::String,
+    sync::Arc,
+    vec::Vec,
+};
+use core::ffi::CStr;
 use internal::Ref;
+
+#[cfg(any(feature = "std", doc))]
+use std::{
+    ffi::{OsStr, OsString},
+    path::{Path, PathBuf},
+};
 
 /// A trait for either borrowing or sharing data.
 ///
@@ -231,19 +272,19 @@ impl_bos! {
     {T: ?Sized} &mut T => T
 
     {T, const N: usize} [T; N] => [T]
-    {T} alloc::vec::Vec<T> => [T]
+    {T} Vec<T> => [T]
 
-    alloc::string::String => str
-    alloc::ffi::CString => core::ffi::CStr
+    String => str
+    CString => CStr
 
     #[cfg(feature = "std")]
-    std::ffi::OsString => std::ffi::OsStr
+    OsString => OsStr
     #[cfg(feature = "std")]
-    std::path::PathBuf => std::path::Path
+    PathBuf => Path
 
-    {T: ?Sized} alloc::boxed::Box<T> => T
-    {B: ?Sized + alloc::borrow::ToOwned} alloc::borrow::Cow<'_, B> => B
+    {T: ?Sized} Box<T> => T
+    {B: ?Sized + ToOwned} Cow<'_, B> => B
 
-    {T: ?Sized} alloc::rc::Rc<T> => T
-    {T: ?Sized} alloc::sync::Arc<T> => T
+    {T: ?Sized} Rc<T> => T
+    {T: ?Sized} Arc<T> => T
 }
