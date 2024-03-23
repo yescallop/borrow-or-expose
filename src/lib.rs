@@ -131,7 +131,7 @@
 //! [`Box<T>`], [`Cow<'_, B>`], [`Rc<T>`], and [`Arc<T>`]. If some of
 //! these are out of scope, consider putting extra trait bounds in your
 //! code, preferably on a function that constructs your type.
-//! 
+//!
 //! [`Cow<'_, B>`]: Cow
 //!
 //! You can also implement [`Bos`] on your own type, for example:
