@@ -1,12 +1,12 @@
 [package]
 name = "borrow-or-share"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Scallop Ye <yescallop@gmail.com>"]
 edition = "2021"
 description = "Traits for either borrowing or sharing data."
 documentation = "https://docs.rs/borrow-or-share"
 repository = "https://github.com/yescallop/borrow-or-share"
-license = "CC0-1.0"
+license = "CC0-1.0 OR MIT"
 keywords = ["borrow", "share"]
 categories = ["rust-patterns"]
 

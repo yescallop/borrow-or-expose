@@ -3,7 +3,7 @@
 Traits for either borrowing or sharing data.
 
 [![crates.io](https://img.shields.io/crates/v/borrow-or-share.svg)](https://crates.io/crates/borrow-or-share)
-[![license](https://img.shields.io/github/license/yescallop/borrow-or-share?color=blue)](/LICENSE)
+![license](https://img.shields.io/github/license/yescallop/borrow-or-share?color=blue)
 
 See below for a basic usage of the crate.
 See the [documentation](https://docs.rs/borrow-or-share) for a detailed walkthrough.
@@ -41,3 +41,10 @@ fn share<'a>(t: &Text<&'a str>) -> &'a str {
 ## Credit
 
 Credit goes to [@beepster4096](https://github.com/beepster4096) for figuring out a safe version of the code.
+
+## License
+
+This crate is dual-licensed under [CC0 1.0] or the [MIT license].
+
+[CC0 1.0]: LICENSE-CC0-1.0
+[MIT license]: LICENSE-MIT
