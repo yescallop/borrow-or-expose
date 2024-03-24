@@ -43,7 +43,3 @@ fn share<'a>(t: &Text<&'a str>) -> &'a str {
 ## Credit
 
 Credit goes to [@beepster4096](https://github.com/beepster4096) for figuring out a safe version of the code.
-
-## License
-
-This crate is dual-licensed under [CC0 1.0](/LICENSE-CC0-1.0) or the [MIT license](LICENSE-MIT).
