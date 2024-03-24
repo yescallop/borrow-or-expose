@@ -1,6 +1,6 @@
 [package]
 name = "borrow-or-share"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Scallop Ye <yescallop@gmail.com>"]
 edition = "2021"
 description = "Traits for either borrowing or sharing data."
