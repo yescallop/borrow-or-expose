@@ -5,7 +5,7 @@ Traits for either borrowing or sharing data.
 [![crates.io](https://img.shields.io/crates/v/borrow-or-share.svg)](https://crates.io/crates/borrow-or-share)
 [![build](https://img.shields.io/github/actions/workflow/status/yescallop/borrow-or-share/ci.yml
 )](https://github.com/yescallop/borrow-or-share/actions/workflows/ci.yml)
-![license](https://img.shields.io/crates/l/borrow-or-share)
+[![license](https://img.shields.io/crates/l/borrow-or-share)](/LICENSE)
 
 See below for a basic usage of the crate.
 See the [documentation](https://docs.rs/borrow-or-share) for a detailed walkthrough.
