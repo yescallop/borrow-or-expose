@@ -3,7 +3,9 @@
 Traits for either borrowing or sharing data.
 
 [![crates.io](https://img.shields.io/crates/v/borrow-or-share.svg)](https://crates.io/crates/borrow-or-share)
-![license](https://img.shields.io/github/license/yescallop/borrow-or-share?color=blue)
+[![build](https://img.shields.io/github/actions/workflow/status/yescallop/borrow-or-share/ci.yml
+)](https://github.com/yescallop/borrow-or-share/actions/workflows/ci.yml)
+![license](https://img.shields.io/crates/l/borrow-or-share)
 
 See below for a basic usage of the crate.
 See the [documentation](https://docs.rs/borrow-or-share) for a detailed walkthrough.
@@ -44,7 +46,4 @@ Credit goes to [@beepster4096](https://github.com/beepster4096) for figuring out
 
 ## License
 
-This crate is dual-licensed under [CC0 1.0] or the [MIT license].
-
-[CC0 1.0]: LICENSE-CC0-1.0
-[MIT license]: LICENSE-MIT
+This crate is dual-licensed under [CC0 1.0](/LICENSE-CC0-1.0) or the [MIT license](LICENSE-MIT).
