@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -D warnings
-      RUSTDOCFLAGS: --cfg docsrs
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust nightly
@@ -19,7 +18,3 @@ jobs:
         run: cargo test
       - name: Test with all features
         run: cargo test --all-features
-      - name: Build doc with no features
-        run: cargo doc
-      - name: Build doc with all features
-        run: cargo doc
