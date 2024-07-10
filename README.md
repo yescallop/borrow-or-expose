@@ -35,7 +35,7 @@ fn borrow(text: &Text<String>) -> &str {
 
 // The returned reference is borrowed from `*text.0`, lives
 // longer than `text` and is said to be shared with `*text`.
-fn share<'a>(t: &Text<&'a str>) -> &'a str {
+fn share<'a>(text: &Text<&'a str>) -> &'a str {
     text.as_str()
 }
 ```
